@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, Input, Output, dash_table
+from dash import Dash, html, dcc, Input, Output
 from dash.exceptions import PreventUpdate
 import datetime
 import pandas as pd
@@ -6,28 +6,34 @@ import sqlite3
 import chatters
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+pd.options.mode.chained_assignment = None
+
 
 app = Dash(__name__)
-
+#  Connect to the local database
 conn = sqlite3.connect('G:/MOONMOON/moonlights_data/chat_data.db', check_same_thread=False)
 c = conn.cursor()
+#  Load in the entire database, to be filtered later
 df = pd.read_sql_query("SELECT * FROM chatters", conn)
+#  Find the dates for which chat data is available
 valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
 base = datetime.datetime.today()
 start_date = datetime.datetime.strptime(min(valid_dates), '%Y-%m-%d')
 numdays = (base - start_date).days
-
 date_list = set((base - datetime.timedelta(days=x)).strftime('%Y-%m-%d') for x in range(numdays))
 disable_dates = date_list - valid_dates
+#  Return a list of dates to be disabled for selection in the HTML SingleDatePicker
 disable = [datetime.datetime.strptime(y, '%Y-%m-%d') for y in disable_dates]
-num = 100
-window = 15
 
 
 def process_data(data):
+    #  Create a column with both date and time (stored separately in the database)
     data['dt_combo'] = pd.to_datetime(data['stream_date'].apply(str) + ' ' + data['timestamp'])
-    chatfile = chatters.parse_logs(data)
-    chatfile = chatters.full_density(chatfile, window=str(window))
+    #  Calculate the density of all messages sent
+    chatfile = chatters.full_density(data, window=15)
+    #  Split message data to account for copy+pasted messages with repeated phrases
+    chatfile = chatters.parse_logs(chatfile)
+    #  Trim the dataset, remove phrases/messages that are repeated less than 5 times
     chatfile = chatters.find_phrases(chatfile)
     return chatfile
 
@@ -54,8 +60,10 @@ app.layout = html.Div([
 @app.callback(Output('data-store', 'data'),
               Input('date-picker', 'date'))
 def load_date(date_selected):
+    #  Load the data from the dataframe for the date selected
     filtered = df[df["stream_date"] == date_selected]
     filtered.reset_index(inplace=True)
+    #  Process the data
     filtered = process_data(filtered)
     return filtered.to_dict('records')
 
@@ -72,22 +80,28 @@ def load_date(date_selected):
 )
 def on_data_set_graph(data, field):
     if data is None:
+        #  Don't break the webpage
         raise PreventUpdate
-
+    #  Create empty figure, to be populated later
     figure = make_subplots(specs=[[{"secondary_y": True}]])
 
     if not data:
+        #  If there is no data (date selected has no chat data), return an empty figure
         return tuple((figure, []))
+
     data = pd.DataFrame(data)
     data['timestamp'] = pd.to_datetime(data['timestamp'])
+    #  Find the top used emotes/phrases in the chat
     top_phrases = data['message'].value_counts().index.tolist()
     if not field:
+        #  If no emotes/phrases have been selected from the dropdown, display the top 5 emotes/phrases
         phrases_to_show = top_phrases[:5]
     elif len(field) == 1:
+        #  Do this to prevent parsing the dropdown value as a string, rather than item in list
         phrases_to_show = field
     else:
         phrases_to_show = field
-
+    #  Calculate the density of the selected emotes/phrases
     processed_chat = chatters.phrase_density(data, phrases_to_show, searchtype='message', window=datetime.timedelta(seconds=15))
     peaks = processed_chat['peak_val']
     density = processed_chat['density']
@@ -98,7 +112,7 @@ def on_data_set_graph(data, field):
         tickformat="%H:%M:%S"
     )
     figure.update_layout(
-        title='Emote Usage, {w:.2s} Second Rolling Sum'.format(w=str(window)),
+        title='Emote Usage, {w:.2s} Second Rolling Sum'.format(w=str(15)),
         xaxis_title='Timestamp (HH:MM:SS)',
         legend=dict(
             orientation='h',
@@ -106,11 +120,11 @@ def on_data_set_graph(data, field):
         ),
     )
     figure.update_yaxes(
-        title_text='Selected Usage in {w:.2s}s'.format(w=str(window)),
+        title_text='Selected Usage in {w:.2s}s'.format(w=str(15)),
         secondary_y=False
     )
     figure.update_yaxes(
-        title_text='Total Chat messages in {w:.2s}s'.format(w=str(window)),
+        title_text='Total Chat messages in {w:.2s}s'.format(w=str(15)),
         secondary_y=True
     )
     for e in phrases_to_show:
