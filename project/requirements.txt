@@ -1,0 +1,7 @@
+scipy
+dash
+dash-core-components
+pandas
+datetime
+gunicorn
+plotly
