@@ -52,7 +52,7 @@ def find_phrases(chatlog):
     # Typically this reduces the number of rows by about half
     # (Note: about 95% of the original chat file is removed, meaning that 5% of all messages are repeated about half the time LOL)
     phrases = chatlog['message'].value_counts()
-    phrases = phrases[phrases > 5]  # Adjust this parameter to exclude more data.
+    phrases = phrases[phrases > 8]  # Adjust this parameter to exclude more data.
     # A value of '1' means that messages that are only sent once are removed.
     chatlog = chatlog.loc[chatlog['message'].isin(phrases.index)]
     chatlog.reset_index(inplace=True, drop=True)
@@ -73,6 +73,8 @@ def phrase_density(chatlog, phrases, searchtype, window):
     conc = conc.rolling(window=datetime.timedelta(seconds=15)).sum()
     conc = conc.fillna(0)
     conc.reset_index(inplace=True)
+    conc.drop_duplicates(subset='timestamp', keep="last", inplace=True)
+
     #  Calculate the peak values (highest density) of each emote using scipy's "find_peaks()"
     peak_phrases = []
     peak_values = []
@@ -81,7 +83,7 @@ def phrase_density(chatlog, phrases, searchtype, window):
         peaks = find_peaks(conc[phrases[e]], distance=2000, height=10)  # These parameters can be changed to increase/decrease number of "highlighted" points
         for p in range(len(peaks[0])):
             peak_y = peaks[1]['peak_heights'][p]
-            peak_x = chatlog['timestamp'].iloc[peaks[0][p]]
+            peak_x = conc['timestamp'].iloc[peaks[0][p]]
             peak_phrases.append(phrases[e])
             peak_values.append(peak_x)
             peak_heights.append(peak_y)

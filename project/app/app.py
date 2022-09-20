@@ -12,10 +12,11 @@ pd.options.mode.chained_assignment = None
 app = Dash(__name__)
 server = app.server
 #  Connect to the local database
-# conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
-# c = conn.cursor()
+conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
+c = conn.cursor()
 #  Load in the entire database, to be filtered later
 # df = pd.read_sql_query("SELECT * FROM chatters", conn)
+# df.to_csv('../data/chat_data.csv')
 df = pd.read_csv('https://raw.githubusercontent.com/jafrizzell/moonlights/582a17fe9035e705eec855a932703199cc4b8b48/project/data/chat_data.csv')
 
 #  Find the dates for which chat data is available
@@ -70,6 +71,8 @@ def load_date(date_selected):
     filtered.reset_index(inplace=True)
     #  Process the data
     filtered = process_data(filtered)
+    # print("num rows= ", filtered.shape[0])
+    # print("file size=", filtered.memory_usage(index=True, deep=True).sum()/1000000)
     return filtered.to_dict('records')
 
 
@@ -181,4 +184,4 @@ def on_data_set_graph(data, field):
 
 
 if __name__ == '__main__':
-    app.run_server(threaded=True, port=10450)
+    app.run_server(debug=True, threaded=True, port=10450)
