@@ -14,16 +14,19 @@ def parse_logs(data):
     all_density = []
     msg_col = data.columns.tolist().index('message')
     for i in range(data.shape[0]):
-        msg = data.iloc[i, msg_col]
+        msg = data.loc[i, 'message']
         msg_no_pasta = msg
         pasta_len = 1
-        if len(msg.split()) > 1:
-            split_msg = msg.split()
-            for j in range(math.ceil(len(msg.split())/2)):
-                if split_msg[0:j+1] == split_msg[j+1:2*(j+1)]:
-                    msg_no_pasta = ' '.join(split_msg[0:j+1])
-                    pasta_len = math.ceil(len(msg.split())/(j+1))
-                    break
+        try:
+            if len(msg.split()) > 1:
+                split_msg = msg.split()
+                for j in range(math.ceil(len(msg.split())/2)):
+                    if split_msg[0:j+1] == split_msg[j+1:2*(j+1)]:
+                        msg_no_pasta = ' '.join(split_msg[0:j+1])
+                        pasta_len = math.ceil(len(msg.split())/(j+1))
+                        break
+        except AttributeError:
+            pass
         all_density.extend([data.loc[i, 'allchat']]*pasta_len)
         all_chat.extend([msg_no_pasta]*pasta_len)
         all_times.extend([data.loc[i, 'dt_combo']]*pasta_len)

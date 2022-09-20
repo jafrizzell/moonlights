@@ -12,14 +12,16 @@ pd.options.mode.chained_assignment = None
 app = Dash(__name__)
 server = app.server
 #  Connect to the local database
-conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
-c = conn.cursor()
+# conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
+# c = conn.cursor()
 #  Load in the entire database, to be filtered later
 # df = pd.read_sql_query("SELECT * FROM chatters", conn)
 df = pd.read_csv('../data/chat_data.csv')
 
 #  Find the dates for which chat data is available
-valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
+# valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
+valid_dates = set(df['stream_date'].unique())
+
 base = datetime.datetime.today()
 start_date = datetime.datetime.strptime(min(valid_dates), '%Y-%m-%d')
 numdays = (base - start_date).days
