@@ -39,7 +39,7 @@ jobs:
       runs-on: ubuntu-latest
       needs: [build]
       env:
-        HEROKU_APP_NAME: docker-dash
+        HEROKU_APP_NAME: moon2lights
         HEROKU_REGISTRY_IMAGE: registry.heroku.com/${HEROKU_APP_NAME}/app
       steps:
         - name: Checkout master
