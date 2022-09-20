@@ -20,7 +20,7 @@ server = app.server
 # df = pd.read_sql_query("SELECT * FROM chatters", conn)
 # df.to_csv('../data/chat_data.csv', index=False)
 
-df = pd.read_csv('../data/chat_data.csv')
+df = pd.read_csv('chat_data.csv')
 
 #  Find the dates for which chat data is available
 # valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
