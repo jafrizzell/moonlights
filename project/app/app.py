@@ -12,7 +12,7 @@ pd.options.mode.chained_assignment = None
 app = Dash(__name__)
 server = app.server
 #  Connect to the local database
-conn = sqlite3.connect('G:/MOONMOON/moonlights_data/chat_data.db', check_same_thread=False)
+conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
 c = conn.cursor()
 #  Load in the entire database, to be filtered later
 df = pd.read_sql_query("SELECT * FROM chatters", conn)

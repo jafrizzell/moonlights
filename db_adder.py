@@ -4,7 +4,7 @@ import sqlite3
 
 
 def main(vod_id):
-    conn = sqlite3.connect('G:/MOONMOON/moonlights_data/chat_data.db')
+    conn = sqlite3.connect('project/data/chat_data.db')
     connection = conn.cursor()
     connection.execute('CREATE TABLE IF NOT EXISTS chatters (stream_date date, timestamp text, username text, message text)')
     conn.commit()
