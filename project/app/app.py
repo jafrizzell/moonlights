@@ -15,7 +15,9 @@ server = app.server
 conn = sqlite3.connect('../data/chat_data.db', check_same_thread=False)
 c = conn.cursor()
 #  Load in the entire database, to be filtered later
-df = pd.read_sql_query("SELECT * FROM chatters", conn)
+# df = pd.read_sql_query("SELECT * FROM chatters", conn)
+df = pd.read_csv('../data/chat_data.csv')
+
 #  Find the dates for which chat data is available
 valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
 base = datetime.datetime.today()
@@ -45,7 +47,7 @@ app.layout = html.Div([
         id='date-picker',
         min_date_allowed=start_date,
         max_date_allowed=datetime.date.today() - datetime.timedelta(days=1),
-        date=datetime.date.today() - datetime.timedelta(days=1),
+        date=max(valid_dates),
         disabled_days=disable
     ),
     dcc.Dropdown(
