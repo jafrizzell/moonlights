@@ -39,6 +39,7 @@ def full_density(chatlog, window):
     w = str(window)+'s'  # Currently disabled, may re-enable to allow users to adjust the summation window? Probably not
     chatlog['allchat'] = chatlog['message'].str.replace('.*', '1', regex=True, n=1)
     chatlog.set_index(chatlog['dt_combo'], inplace=True)
+    chatlog.sort_index(inplace=True)
     chatlog.drop(['index'], inplace=True, axis=1)
     # Calculate rolling sum of all messages sent within last 15 seconds
     chatlog['allchat'] = chatlog['allchat'].rolling(window=datetime.timedelta(seconds=15)).sum()
