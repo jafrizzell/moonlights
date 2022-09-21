@@ -66,16 +66,17 @@ def phrase_density(chatlog, phrases, searchtype, window):
     w = str(window)+'s'  # Currently disabled, may re-enable to allow users to adjust the summation window?
     searchtype = str(searchtype).lower()
     conc = pd.DataFrame()
+    phrases = phrases
     #  For each emote/phrase, add a column to the dataframe
     for emote in phrases:
         conc[emote] = chatlog[searchtype].str.contains(re.escape(emote), flags=re.IGNORECASE)
     conc.set_index(chatlog['timestamp'], inplace=True)
     #  Calculate the 15-second rolling sum on each column to get the density
+
     conc = conc.rolling(window=datetime.timedelta(seconds=15)).sum()
     conc = conc.fillna(0)
     conc.reset_index(inplace=True)
     conc.drop_duplicates(subset='timestamp', keep="last", inplace=True)
-
     #  Calculate the peak values (highest density) of each emote using scipy's "find_peaks()"
     peak_phrases = []
     peak_values = []
