@@ -12,13 +12,14 @@ pd.options.mode.chained_assignment = None
 app = Dash(__name__)
 server = app.server
 #  Connect to the local database
-#
+
 # conn = sqlite3.connect('chat_data.db', check_same_thread=False)
 # c = conn.cursor()
 
 #  Load in the entire database, to be filtered later
 # df = pd.read_sql_query("SELECT * FROM chatters", conn)
 # df.to_csv('chat_data.csv', index=False)
+# exit()
 
 df = pd.read_csv('chat_data.csv')
 
@@ -26,10 +27,11 @@ df = pd.read_csv('chat_data.csv')
 # valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
 valid_dates = set(df['stream_date'].unique())
 
-base = datetime.datetime.today()
+base = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d')
 start_date = datetime.datetime.strptime(min(valid_dates), '%Y-%m-%d')
 numdays = (base - start_date).days
 date_list = set((base - datetime.timedelta(days=x)).strftime('%Y-%m-%d') for x in range(numdays))
+
 disable_dates = date_list - valid_dates
 #  Return a list of dates to be disabled for selection in the HTML SingleDatePicker
 disable = [datetime.datetime.strptime(y, '%Y-%m-%d') for y in disable_dates]
@@ -52,8 +54,8 @@ app.layout = html.Div([
     dcc.DatePickerSingle(
         id='date-picker',
         min_date_allowed=start_date,
-        max_date_allowed=datetime.date.today() - datetime.timedelta(days=1),
-        date=max(valid_dates),
+        max_date_allowed=base,
+        date=base,
         disabled_days=disable
     ),
     dcc.Dropdown(
