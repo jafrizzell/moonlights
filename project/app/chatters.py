@@ -57,6 +57,7 @@ def find_phrases(chatlog):
     # A value of '1' means that messages that are only sent once are removed.
     chatlog = chatlog.loc[chatlog['message'].isin(phrases.index)]
     chatlog.reset_index(inplace=True, drop=True)
+    chatlog['message'] = chatlog['message'].astype('category')
     return chatlog
 
 

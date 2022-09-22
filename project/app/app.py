@@ -77,7 +77,6 @@ def load_date(date_selected):
     filtered.reset_index(inplace=True)
     #  Process the data
     filtered = process_data(filtered)
-    print("file size=", filtered.memory_usage(index=True, deep=True).sum()/1000000)
     return filtered.to_dict('records')
 
 
