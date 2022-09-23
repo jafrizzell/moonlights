@@ -92,8 +92,10 @@ def load_date(date_selected):
 )
 def on_data_set_graph(data, field):
     if data is None:
+        data = load_date(max(valid_dates))
+        field = None
         #  Don't break the webpage
-        raise PreventUpdate
+        # raise PreventUpdate
     #  Create empty figure, to be populated later
     figure = make_subplots(specs=[[{"secondary_y": True}]])
 
