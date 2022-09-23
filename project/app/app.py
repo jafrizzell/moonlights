@@ -1,8 +1,10 @@
+import dash
 from dash import Dash, html, dcc, Input, Output
 from dash.exceptions import PreventUpdate
 import datetime
 import pandas as pd
 import sqlite3
+import numpy as np
 import chatters
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -26,7 +28,20 @@ df = pd.read_csv('chat_data.csv')
 #  Find the dates for which chat data is available
 # valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
 valid_dates = set(df['stream_date'].unique())
+ids = df[['stream_date', 'vod_id']].value_counts().sort_index().reset_index(name='count')
 
+id_times = []
+dupes = ids['stream_date'].duplicated()
+
+for j in range(ids.shape[0]):
+    row = df[(df['stream_date'] == ids['stream_date'].iloc[j]) & (df['vod_id'] == ids['vod_id'].iloc[j])]
+    max_row = max(row['timestamp']).split(':')
+    max_time = int(max_row[0]) * 3600 + int(max_row[1]) * 60 + int(max_row[2])
+    id_times.append(max_time)
+
+
+id_map = {ids['vod_id'].iloc[k]: [ids['stream_date'].iloc[k], id_times[k]] for k in range(ids.shape[0])}
+print(id_map)
 base = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d')
 start_date = datetime.datetime.strptime(min(valid_dates), '%Y-%m-%d')
 numdays = (base - start_date).days
@@ -64,7 +79,11 @@ app.layout = html.Div([
         ),
     html.Div([
         dcc.Graph(id='phrase-graph'),
-    ])
+    ]),
+    html.A(
+        children='',
+        id='moon2tv-link',
+    )
 ])
 
 
@@ -82,6 +101,33 @@ def load_date(date_selected):
 
 @app.callback(
     [
+        Output('moon2tv-link', 'href'),
+        Output('moon2tv-link', 'children'),
+    ],
+    [
+        Input('phrase-graph', 'clickData'),
+    ]
+)
+def redirect(clickData):
+    if not clickData:
+        raise PreventUpdate
+    t_stamp_dt = clickData["points"][0]['x']
+    t_date = t_stamp_dt.split(' ')[0]
+    t_stamp_dt = datetime.datetime.strptime(t_stamp_dt, '%Y-%m-%d %H:%M:%S')
+    tlink = t_stamp_dt.hour * 3600 + t_stamp_dt.minute * 60 + t_stamp_dt.second
+    offset = 0
+    for v_id, date_w_max in id_map.items():
+        if t_date == date_w_max[0]:
+            if tlink < date_w_max[1]:
+                print(tlink, v_id)
+                link = 'https://moon2.tv/youtube/'+str(v_id)+'?t='+str(tlink-offset)+'s'
+                return tuple((link, link))
+            else:
+                offset = date_w_max[1]
+
+
+@app.callback(
+    [
         Output('phrase-graph', 'figure'),
         Output('phrase-show', 'options'),
     ],
@@ -92,10 +138,9 @@ def load_date(date_selected):
 )
 def on_data_set_graph(data, field):
     if data is None:
-        data = load_date(max(valid_dates))
-        field = None
+        # data = load_date(max(valid_dates))
         #  Don't break the webpage
-        # raise PreventUpdate
+        raise PreventUpdate
     #  Create empty figure, to be populated later
     figure = make_subplots(specs=[[{"secondary_y": True}]])
 
