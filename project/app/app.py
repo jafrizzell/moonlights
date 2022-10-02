@@ -1,6 +1,9 @@
+from xml.dom import DOMException
+
 import dash
 from dash import Dash, html, dcc, Input, Output
 from dash.exceptions import PreventUpdate
+
 import datetime
 import pandas as pd
 import sqlite3
@@ -17,8 +20,8 @@ server = app.server
 
 # conn = sqlite3.connect('chat_data.db', check_same_thread=False)
 # c = conn.cursor()
-
-#  Load in the entire database, to be filtered later
+#
+#  # Load in the entire database, to be filtered later
 # df = pd.read_sql_query("SELECT * FROM chatters", conn)
 # df.to_csv('chat_data.csv', index=False)
 # exit()
@@ -41,7 +44,6 @@ for j in range(ids.shape[0]):
 
 
 id_map = {ids['vod_id'].iloc[k]: [ids['stream_date'].iloc[k], id_times[k]] for k in range(ids.shape[0])}
-print(id_map)
 base = datetime.datetime.strptime(max(valid_dates), '%Y-%m-%d')
 start_date = datetime.datetime.strptime(min(valid_dates), '%Y-%m-%d')
 numdays = (base - start_date).days
@@ -65,7 +67,7 @@ def process_data(data):
 
 
 app.layout = html.Div([
-    dcc.Store(id='data-store', storage_type='session'),
+    dcc.Store(id='data-store', storage_type='session', clear_data=True),
     dcc.DatePickerSingle(
         id='date-picker',
         min_date_allowed=start_date,
@@ -91,12 +93,18 @@ app.layout = html.Div([
               Input('date-picker', 'date'),
               prevent_initial_call=True)
 def load_date(date_selected):
+
     #  Load the data from the dataframe for the date selected
     filtered = df[df["stream_date"] == date_selected]
     filtered.reset_index(inplace=True)
     #  Process the data
     filtered = process_data(filtered)
-    return filtered.to_dict('records')
+    # print(filtered.memory_usage(index=True, deep=True).sum())
+    try:
+        return filtered.to_dict('records')
+    except DOMException:
+        raise PreventUpdate
+
 
 
 @app.callback(
@@ -119,7 +127,6 @@ def redirect(clickData):
     for v_id, date_w_max in id_map.items():
         if t_date == date_w_max[0]:
             if tlink < date_w_max[1]:
-                print(tlink, v_id)
                 link = 'https://moon2.tv/youtube/'+str(v_id)+'?t='+str(tlink-offset)+'s'
                 return tuple((link, link))
             else:
@@ -138,15 +145,17 @@ def redirect(clickData):
 )
 def on_data_set_graph(data, field):
     if data is None:
-        # data = load_date(max(valid_dates))
+        data = load_date(max(valid_dates))
         #  Don't break the webpage
-        raise PreventUpdate
+        # raise PreventUpdate
     #  Create empty figure, to be populated later
     figure = make_subplots(specs=[[{"secondary_y": True}]])
 
     if not data:
         #  If there is no data (date selected has no chat data), return an empty figure
-        return tuple((figure, []))
+        raise PreventUpdate
+        # data = load_date(max(valid_dates))
+        # return tuple((figure, []))
 
     data = pd.DataFrame(data)
     data['timestamp'] = pd.to_datetime(data['timestamp'])
@@ -162,8 +171,10 @@ def on_data_set_graph(data, field):
         phrases_to_show = field
     #  Calculate the density of the selected emotes/phrases
     processed_chat = chatters.phrase_density(data, phrases_to_show, searchtype='message', window=datetime.timedelta(seconds=15))
+    full_chat = data.resample('60S', on='timestamp').max()['allchat']
     peaks = processed_chat['peak_val']
     density = processed_chat['density']
+
 
     figure.update_xaxes(
         nticks=20,
@@ -217,8 +228,8 @@ def on_data_set_graph(data, field):
         )
     figure.add_trace(
         go.Scatter(
-            x=data['timestamp'].values,
-            y=data['allchat'].values,
+            x=full_chat.index,
+            y=full_chat.values,
             dx=1000*60*10,
             name="All Chat Messages",
             hoverinfo='none',
