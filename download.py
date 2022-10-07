@@ -10,17 +10,18 @@ def download(basepath, vod_id):
     # First, download twitch chat logs using twitch-chat-downloader: https://github.com/PetterKraabol/Twitch-Chat-Downloader
     # This will create a folder named by the vod ID, and two subfolders for the source files and output files
 
-    Path(drive_path+'/source/').mkdir(parents=True, exist_ok=True)
-    Path(drive_path+'/output/').mkdir(parents=True, exist_ok=True)
+    # Path(drive_path+'/source/').mkdir(parents=True, exist_ok=True)
+    # Path(drive_path+'/output/').mkdir(parents=True, exist_ok=True)
 
     # If the chat log already exists, no need to re-download it.
-    if not os.path.isfile(drive_path+'/source/'+str(vod_id)+'.log'):
-        print(drive_path+'/source/'+str(vod_id)+'.log')
-        print('No chatlogs found for this stream id found... downloading chat logs...')
-        subprocess.run(["tcd", '--video', str(vod_id), '--format', 'irc', '--output', drive_path+'/source/'])
-        db_adder.main(vod_id)
-    else:
-        print("Using downloaded chat logs for ", vod_id)
+    # if not os.path.isfile(drive_path+'/source/'+str(vod_id)+'.log'):
+    #     print(drive_path+'/source/'+str(vod_id)+'.log')
+    #     print('No chatlogs found for this stream id found... downloading chat logs...')
+    subprocess.run(["tcd", '--channel', 'MOONMOON', 'last=1', '--format', 'irc', '--output', 'G:/MOONMOON/highlights/source/'])
+    #     exit()
+    #     db_adder.main(vod_id)
+    # else:
+    #     print("Using downloaded chat logs for ", vod_id)
 
 
 
