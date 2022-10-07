@@ -1,6 +1,4 @@
 from xml.dom import DOMException
-
-
 from dash import Dash, html, dcc, Input, Output
 from dash.exceptions import PreventUpdate
 
