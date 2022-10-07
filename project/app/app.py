@@ -1,13 +1,12 @@
 from xml.dom import DOMException
 
-import dash
+
 from dash import Dash, html, dcc, Input, Output
 from dash.exceptions import PreventUpdate
 
 import datetime
 import pandas as pd
-import sqlite3
-import numpy as np
+
 import chatters
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -16,21 +15,14 @@ pd.options.mode.chained_assignment = None
 
 app = Dash(__name__)
 server = app.server
-#  Connect to the local database
-
-# conn = sqlite3.connect('chat_data.db', check_same_thread=False)
-# c = conn.cursor()
-#
-#  # Load in the entire database, to be filtered later
-# df = pd.read_sql_query("SELECT * FROM chatters", conn)
-# df.to_csv('chat_data.csv', index=False)
-# exit()
 
 df = pd.read_csv('chat_data.csv')
+
 
 #  Find the dates for which chat data is available
 # valid_dates = set(pd.read_sql_query('SELECT DISTINCT stream_date FROM chatters', conn)['stream_date'].values)
 valid_dates = set(df['stream_date'].unique())
+
 ids = df[['stream_date', 'vod_id']].value_counts().sort_index().reset_index(name='count')
 
 id_times = []
@@ -186,7 +178,7 @@ def on_data_set_graph(data, field):
         xaxis_title='Timestamp (HH:MM:SS)',
         legend=dict(
             orientation='h',
-            y=-0.3,
+            y=-0.2,
         ),
     )
     figure.update_yaxes(
